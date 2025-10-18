@@ -1,0 +1,55 @@
+# A descriptive name for your pipeline
+name: Java CI/CD Pipeline
+
+# This section defines the trigger for the workflow.
+# It will run on every 'push' to the 'main' branch.
+on:
+  push:
+    branches: [ "main" ]
+
+# This section defines the jobs that will run as part of the pipeline.
+jobs:
+  # The name of our single job is 'build-and-push'.
+  build-and-push:
+    # The job will run on a virtual machine hosted by GitHub running the latest version of Ubuntu.
+    runs-on: ubuntu-latest
+
+    # These are the sequential steps the job will execute.
+    steps:
+    # Step 1: Check out the repository's code
+    # This action downloads your code onto the virtual machine.
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Step 2: Set up Java Development Kit (JDK)
+    # This action installs Java 17, which is required to build your project.
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # Step 3: Code Build with Maven
+    # This fulfills the "code build" requirement of the assessment.
+    # It compiles the Java code and packages it into a JAR file.
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+
+    # Step 4: Log in to Docker Hub
+    # This uses the secrets you configured to securely log in to Docker.
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # Step 5: Docker Build and Push
+    # This fulfills the "docker build" requirement of the assessment.
+    # It builds the Docker image and pushes it to your Docker Hub repository.
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        # The tag for the image will be your username and the repo name.
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/kaiburr-task-app:latest
