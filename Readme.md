@@ -1,91 +1,56 @@
-# Kaiburr Assessment - Task 1: Java REST API
+# Kaiburr Assessment - Task 4: Automated CI/CD Pipeline
 
-## Project Overview
+## 🚀 Project Overview
 
-This repository contains the source code for a robust Java Spring Boot application built to fulfill the requirements of Task 1 of the Kaiburr assessment. The application exposes a RESTful API for managing "task" objects, which represent shell commands. It supports full CRUD (Create, Read, Update, Delete) operations, as well as advanced search and execution capabilities. All data is persisted in a MongoDB database.
+This repository demonstrates a complete, automated Continuous Integration and Continuous Delivery (CI/CD) pipeline for the Java backend application. This project fulfills all requirements for Task 4 by automating the build and containerization process, ensuring code quality and rapid delivery.
 
-The project is built with a focus on clean code, adherence to REST principles, and clear documentation.
-
----
-
-## Core Features Implemented
-
-* **Task Management:** Full lifecycle management of task objects.
-* **Database Integration:** Seamlessly stores and retrieves data from a MongoDB database.
-* **Search Functionality:** Endpoint to find tasks based on a partial or full name match.
-* **Command Execution:** An endpoint to trigger the shell command associated with a task and record the execution details, including start/end times and output.
+The pipeline is designed to trigger automatically on every push to the `main` branch, streamlining the development workflow from source code to a deployable artifact in a container registry.
 
 ---
 
-## Prerequisites
+## 🛠️ CI/CD Tooling Selection
 
-To build and run this application locally, you will need the following software installed:
-* Java 17 or later
-* Apache Maven
-* Docker (for running the required MongoDB instance)
-* An API Client (e.g., Postman) for testing the endpoints.
+For this task, **GitHub Actions** was chosen as the primary CI/CD tool. This decision was based on several key advantages that align with modern DevOps best practices:
 
----
-
-## Step-by-Step Execution Guide
-
-### 1. Clone the Repository
-Open your terminal and clone the project from GitHub:
-```bash
-git clone [https://github.com/m-navaneeth8770/kaiburr-java-api-task.git](https://github.com/m-navaneeth8770/kaiburr-java-api-task.git)
-cd kaiburr-java-api-task
-```
-
-### 2. Start the MongoDB Database
-This project requires a running MongoDB instance. The easiest way to start one is by using the official Docker image:
-```bash
-docker run -d --name kaiburr-mongo -p 27017:27017 mongo
-```
-
-### 3. Run the Application
-Use the included Maven wrapper to compile and run the Spring Boot application:
-```bash
-mvn spring-boot:run
-```
-The API server will start on `http://localhost:8080`, and it will automatically connect to the MongoDB container.
+* **Native Integration:** As the code is hosted on GitHub, using GitHub Actions provides a seamless, all-in-one platform for source control and automation. The pipeline configuration lives directly within the `.github/workflows` directory, making it version-controlled and transparent.
+* **Managed Infrastructure:** GitHub Actions runs on cloud-hosted virtual machines (runners), eliminating the need to set up, manage, or maintain separate CI/CD servers like Jenkins.
+* **Rich Ecosystem:** It offers a vast marketplace of pre-built "Actions" that simplify complex tasks. In this pipeline, we leverage official actions like `actions/checkout`, `actions/setup-java`, and the powerful `docker/build-push-action` to handle code checkout, environment setup, and Docker image publication with minimal custom scripting.
+* **Secure Credential Management:** GitHub Secrets provide a secure and robust way to store sensitive information like the `DOCKERHUB_TOKEN`, ensuring that credentials are never exposed in the source code.
 
 ---
 
-## API Testing Showcase
+## ⚙️ Automated Pipeline Workflow
 
-The following section provides a comprehensive walkthrough of the API's functionality. Each screenshot demonstrates a successful request and response cycle, verifying that all requirements of the assessment have been met. Each screenshot includes my name and the system timestamp to ensure authenticity.
+The pipeline consists of a single job that executes a series of sequential steps to build and publish the application:
 
-### 1. Creating a New Task (`1-create-task.png`)
-A `PUT` request to the `/tasks` endpoint successfully creates a new task object, returning a `201 Created` status and the newly created resource.
+1.  **Checkout Code:** The workflow begins by checking out the latest commit from the `main` branch onto the GitHub runner.
+2.  **Set Up Environment:** It provisions a clean environment with the required Java Development Kit (JDK 17) to ensure a consistent build environment.
+3.  **Compile & Package (CI):** This is the **Continuous Integration** step. The pipeline executes `mvn clean package`, which compiles the Java source code, runs any unit tests (skipped in this config for speed), and packages the application into an executable `.jar` file. A failure in this step immediately stops the pipeline and reports an error.
+4.  **Authenticate with Registry:** The pipeline securely logs in to Docker Hub using the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets.
+5.  **Build & Push Docker Image (CD):** This is the **Continuous Delivery** step. Using the project's `Dockerfile`, it builds a new Docker image, tags it, and pushes the final artifact to the specified Docker Hub repository (`mnavaneeth/kaiburr-task-app`).
 
-![Create Task](screenshots/1-create-task.png)
+---
 
-### 2. Retrieving All Tasks (`2-get-task.png`)
-A `GET` request to the base `/tasks` endpoint returns a JSON array containing all tasks currently stored in the database.
+## 📸 Evidence of a Successful Pipeline Run
 
-![Get All Tasks](screenshots/2-get-task.png)
+The following screenshots provide definitive proof of a successful, end-to-end pipeline execution.
 
-### 3. Retrieving a Single Task by ID (`3-get-task_id.png`)
-A `GET` request with an `id` query parameter (`/tasks?id=...`) correctly fetches and returns the specific task object.
+### 1. Pipeline Success Summary
+This screenshot shows the main summary view in the "Actions" tab. The green checkmark confirms that the entire workflow, triggered by the commit "Fix: Correct project structure for CI/CD", completed successfully in 1 minute and 28 seconds.
 
-![Get Task by ID](screenshots/3-get-task_id.png)
+![Pipeline Success Summary](screenshots/1-pipeline-success.png)
 
-### 4. Finding a Task by Name (`4-find-task.png`)
-A `GET` request to `/tasks/findByName` with a `name` parameter successfully finds and returns all tasks whose names contain the specified string.
+### 2. Successful Maven Build Step
+Drilling down into the job, this log output confirms that the "Build with Maven" step passed, successfully compiling the code and creating the `.jar` artifact.
 
-![Find Task by Name](screenshots/4-find-task.png)
+![Successful Maven Build](screenshots/2-maven-build.png)
 
-### 5. Executing a Task (`5-execute-task.png`)
-A `PUT` request to the `/tasks/{id}/executions` endpoint triggers the task's command. The system records the `startTime`, `endTime`, and the command's `output`, saving it back to the task object.
+### 3. Successful Docker Image Push
+This log output from the "Build and push Docker image" step shows the successful execution of the Docker build process and the final push to the registry.
 
-![Execute Task](screenshots/5-execute-task.png)
+![Successful Docker Push](screenshots/3-docker-push.png)
 
-### 6. Deleting a Task (`6-delete-task.png`)
-A `DELETE` request to `/tasks/{id}` successfully removes the specified task from the database and returns a confirmation message.
+### 4. Final Artifact on Docker Hub
+This screenshot of my Docker Hub profile (`mnavaneeth`) confirms the final result: the `mnavaneeth/kaiburr-task-app` image was successfully published and is now available for deployment.
 
-![Delete Task](screenshots/6-delete-task.png)
-
-### 7. Final Verification (`7-return-empty-array.png`)
-To confirm the `DELETE` operation was successful, a final `GET` request is made to `/tasks`. The API correctly returns an empty array, verifying that the task was permanently removed from the database.
-
-![Final Verification](screenshots/7-return-empty-array.png)
+![Docker Hub Result](screenshots/4-docker-hub-result.png)
